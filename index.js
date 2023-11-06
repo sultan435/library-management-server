@@ -116,6 +116,20 @@ app.put('/api/v1/books/book-update/:id', async(req, res)=>{
 } )
 
 
+app.delete('/api/v1/user/cancel-borrow/:id/:addId', async(req, res)=>{
+  const id = req.params.id;
+  const bookId = req.params.addId
+  const query = {_id: new ObjectId(id)}
+  const item = await booksCollection.findOne({_id: new ObjectId(bookId)})
+  console.log(item)
+  const prevQuantity = item.bookQuantity
+  const update = await booksCollection.updateOne({_id: new ObjectId(bookId)},{$set:{bookQuantity: prevQuantity + 1}})
+  const result = await userCollection.deleteOne(query)
+  res.send(result)
+
+})
+
+
 
 
 
