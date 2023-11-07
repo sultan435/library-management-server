@@ -43,36 +43,82 @@ const categoriesCollection = client.db("libraryBook").collection("bookCategory")
 const booksCollection = client.db("libraryBook").collection("books")
 const userCollection = client.db("libraryBook").collection("user")
 
+
+
 //Get: method category
-app.get('/api/v1/categories', async(req, res)=>{
-    const result = await categoriesCollection.find().toArray()
-    res.send(result)
+app.get('/api/v1/categories', async (req, res) => {
+  const result = await categoriesCollection.find().toArray()
+  res.send(result)
 })
-// all books
-app.get('/api/v1/books', async(req, res)=>{
-    const result = await booksCollection.find().toArray()
-    res.send(result)
+
+// all books//filter//sort//pagination==smy paile krbo api ses
+app.get('/api/v1/books', async (req, res) => {
+  let query = { bookQuantity: { $gt: 0 } }
+  let queryObj = {}
+  let sortObj = {}
+  
+
+  if (req.query.quantity !== "bookQuantity") {
+    query = {}
+  }
+  ////quantity filter                         
+  const bookQuantity = req.query.bookQuantity;      
+  // category filter
+  const bookCategory = req.query.bookCategory      
+  //sorting
+  const sortField = req.query.sortField            
+  const sortOrder = req.query.sortOrder
+
+  // //pagination
+  const page = Number(req.query.page)
+  const limit = Number(req.query.limit)
+  const skip = (page - 1) * limit
+
+  if (bookQuantity) {
+    query.bookCategory = bookQuantity
+  }
+  if (bookCategory) {
+    queryObj.bookCategory = bookCategory
+  }
+
+  if (sortField && sortOrder) {
+    sortObj[sortField] = sortOrder
+  }
+  const result = await booksCollection.find(query).skip(skip).limit(limit).sort(sortObj).toArray()
+
+  const total = await booksCollection.countDocuments()
+
+  res.send({ total, result })
 })
+
+//all data
+app.get('/api/v1/books', async (req, res) => {
+  const result = await booksCollection.find().toArray()
+  res.send(result)
+})
+
 //category books
-app.get('/api/v1/books/:bookCategory', async(req, res)=>{
-    const books = req.params.bookCategory
-    const query = {bookCategory: books}
-    const result = await booksCollection.find(query).toArray()
-    res.send(result)
-
-})
-app.get('/api/v1/book/:id', async(req, res)=>{
-    const id = req.params.id
-    const query = {_id: new ObjectId(id)}
-    const result = await booksCollection.findOne(query)
-    res.send(result)
+app.get('/api/v1/books/:bookCategory', async (req, res) => {
+  const books = req.params.bookCategory
+  const query = { bookCategory: books }
+  const result = await booksCollection.find(query).toArray()
+  res.send(result)
 
 })
 
-app.get('/api/v1/user/book-borrow', async(req, res)=>{
+app.get('/api/v1/book/:id', async (req, res) => {
+  const id = req.params.id
+  const query = { _id: new ObjectId(id) }
+  const result = await booksCollection.findOne(query)
+  res.send(result)
+
+})
+
+//Get:borrow
+app.get('/api/v1/user/book-borrow', async (req, res) => {
   const queryEmail = req.query.email
-  let query ={};
-  if(req.query?.email){
+  let query = {};
+  if (req.query?.email) {
     query.email = queryEmail
   }
   const result = await userCollection.find(query).toArray()
@@ -80,59 +126,57 @@ app.get('/api/v1/user/book-borrow', async(req, res)=>{
 })
 
 //POst: method
-app.post('/api/v1/user/book-borrow', async(req, res)=>{
-    const body = req.body
-    const id = body.data._id
-    const item = await booksCollection.findOne({_id: new ObjectId(id)})
-    const prevQuantity = item.bookQuantity
-    if(prevQuantity === 0){
-      return res.send("quantity is zero")
-    }
-    const update = await booksCollection.updateOne({_id: new ObjectId(id)},{$set:{bookQuantity: prevQuantity - 1}})
+app.post('/api/v1/user/book-borrow', async (req, res) => {
+  const body = req.body
+  const id = body.data._id
+  const item = await booksCollection.findOne({ _id: new ObjectId(id) })
+  const prevQuantity = item.bookQuantity
+  if (prevQuantity === 0) {
+    return res.send("quantity is zero")
+  }
+  const update = await booksCollection.updateOne({ _id: new ObjectId(id) }, { $set: { bookQuantity: prevQuantity - 1 } })
 
-    const result = await userCollection.insertOne(body)
-    res.send(result)
+  const result = await userCollection.insertOne(body)
+  res.send(result)
 })
 
-app.post('/api/v1/books/create-book', async(req, res)=>{
+//Post: create book
+app.post('/api/v1/books/create-book', async (req, res) => {
   const body = req.body;
   const result = await booksCollection.insertOne(body)
   res.send(result)
 
 })
 //Put: update method
-app.put('/api/v1/books/book-update/:id', async(req, res)=>{
+app.put('/api/v1/books/book-update/:id', async (req, res) => {
   const id = req.params.id;
-  const query = {_id: new ObjectId(id)}
-  const body= req.body;
-  const option = {upsert: true}
-  const updateBook ={
-    $set:{
+  const query = { _id: new ObjectId(id) }
+  const body = req.body;
+  const option = { upsert: true }
+  const updateBook = {
+    $set: {
       ...body,
     }
   }
-  const result = await booksCollection.updateOne(query,updateBook,option)
+  const result = await booksCollection.updateOne(query, updateBook, option)
   res.send(result)
-} )
+})
 
-
-app.delete('/api/v1/user/cancel-borrow/:id/:addId', async(req, res)=>{
+//delete: method
+app.delete('/api/v1/user/cancel-borrow/:id/:addId', async (req, res) => {
   const id = req.params.id;
   const bookId = req.params.addId
-  const query = {_id: new ObjectId(id)}
-  const item = await booksCollection.findOne({_id: new ObjectId(bookId)})
+  const query = { _id: new ObjectId(id) }
+  const item = await booksCollection.findOne({ _id: new ObjectId(bookId) })
   console.log(item)
   const prevQuantity = item.bookQuantity
-  const update = await booksCollection.updateOne({_id: new ObjectId(bookId)},{$set:{bookQuantity: prevQuantity + 1}})
+  const update = await booksCollection.updateOne({ _id: new ObjectId(bookId) }, { $set: { bookQuantity: prevQuantity + 1 } })
   const result = await userCollection.deleteOne(query)
   res.send(result)
 
 })
 
 
-
-
-
-app.listen(port, ()=>{
-    console.log(`library server port: ${port}`);
+app.listen(port, () => {
+  console.log(`library server port: ${port}`);
 })
