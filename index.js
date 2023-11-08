@@ -22,13 +22,12 @@ app.use(cookieParser())
 
 
 app.get('/', (req, res) => {
-  res.send('hello world')
+  res.send('hello world sultan')
 })
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.pdscwoz.mongodb.net/?retryWrites=true&w=majority`;
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -110,9 +109,7 @@ app.get('/api/v1/books', async (req, res) => {
     sortObj[sortField] = sortOrder
   }
   const result = await booksCollection.find(query).skip(skip).limit(limit).sort(sortObj).toArray()
-
   const total = await booksCollection.countDocuments()
-
   res.send({ total, result })
 })
 
@@ -226,7 +223,6 @@ app.delete('/api/v1/user/cancel-borrow/:id/:addId', async (req, res) => {
   res.send(result)
 
 })
-
 
 app.listen(port, () => {
   console.log(`library server port: ${port}`);
