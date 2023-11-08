@@ -10,7 +10,11 @@ const port = process.env.PORT || 5000
 // respond with "hello world" when a GET request is made to the homepage
 
 app.use(cors({
-  origin:['http://localhost:5173'],
+  origin:[
+    // 'http://localhost:5173',
+    'https://library-management-proje-5e232.web.app',
+    'https://library-management-proje-5e232.firebaseapp.com'
+  ],
   credentials: true,
 }))
 app.use(express.json())
@@ -126,7 +130,7 @@ app.post('/api/v1/access-token', async(req, res)=>{
 })
 
 //all data
-app.get('/api/v1/books',verify, async (req, res) => {
+app.get('/api/v1/books', async (req, res) => {
   const result = await booksCollection.find().toArray()
   res.send(result)
 })
@@ -205,6 +209,7 @@ app.put('/api/v1/books/book-update/:id', async (req, res) => {
     }
   }
   const result = await booksCollection.updateOne(query, updateBook, option)
+  console.log(result);
   res.send(result)
 })
 
