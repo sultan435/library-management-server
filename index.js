@@ -1,17 +1,17 @@
 const express = require('express')
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-var cookieParser = require('cookie-parser')
+const cookieParser = require('cookie-parser')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express()
 require('dotenv').config()
 const port = process.env.PORT || 5000
 
 // respond with "hello world" when a GET request is made to the homepage
-
+// baseURL: 'https://library-management-server-gamma.vercel.app/api/v1',
 app.use(cors({
-  origin:[
-    // 'http://localhost:5173',
+  origin: [
+    // 'http://localhost:5173','http://localhost:5174'
     'https://library-management-proje-5e232.web.app',
     'https://library-management-proje-5e232.firebaseapp.com'
   ],
@@ -54,7 +54,7 @@ const userCollection = client.db("libraryBook").collection("user")
 
 //verify token
 const verify = async(req,res,next)=>{
-  const {token} = req.cookies?.token;
+  const {token} = req.cookies;
   console.log(token)
   if(!token){
     return res.status(401).send({status:"unAuthorized Access", code: "401"})
@@ -64,6 +64,7 @@ const verify = async(req,res,next)=>{
     if(error){
       return res.status(401).send({status:"unAuthorized Access", code: "401"})
     }
+    console.log(decoded);
     req.user = decoded
     next()
   })
@@ -76,21 +77,21 @@ app.get('/api/v1/categories', async (req, res) => {
 })
 
 // all books//filter//sort//pagination==smy paile krbo api ses
-app.get('/api/v1/books', async (req, res) => {
+app.get('/api/v1/books',verify, async (req, res) => {
   let query = { bookQuantity: { $gt: 0 } }
   let queryObj = {}
   let sortObj = {}
-  
+
 
   if (req.query.quantity !== "bookQuantity") {
     query = {}
   }
   ////quantity filter                         
-  const bookQuantity = req.query.bookQuantity;      
+  const bookQuantity = req.query.bookQuantity;
   // category filter
-  const bookCategory = req.query.bookCategory      
+  const bookCategory = req.query.bookCategory
   //sorting
-  const sortField = req.query.sortField            
+  const sortField = req.query.sortField
   const sortOrder = req.query.sortOrder
 
   // //pagination
@@ -115,22 +116,23 @@ app.get('/api/v1/books', async (req, res) => {
 
 
 //jwt
-app.post('/api/v1/access-token', async(req, res)=>{
+app.post('/api/v1/access-token', async (req, res) => {
   const user = req.body;
-  const token = jwt.sign(user,process.env.SECRET_KEY, {expiresIn: "1h"})
+  const token = jwt.sign(user, process.env.SECRET_KEY, { expiresIn: 60 * 60 })
+  // console.log(token)
   res
-  .cookie("token",token,{
-    httpOnly: true,
-    secure:false,
-  })
-  .send({success: true})
+    .cookie("token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    }).send({ success: true })
 })
 
 //all data
-app.get('/api/v1/books', async (req, res) => {
-  const result = await booksCollection.find().toArray()
-  res.send(result)
-})
+// app.get('/api/v1/books',verify, async (req, res) => {
+//   const result = await booksCollection.find().toArray()
+//   res.send(result)
+// })
 
 //category books
 app.get('/api/v1/books/:bookCategory', async (req, res) => {
@@ -152,6 +154,11 @@ app.get('/api/v1/book/:id', async (req, res) => {
 //Get:borrow
 app.get('/api/v1/user/book-borrow', async (req, res) => {
   const queryEmail = req.query.email
+  // const userEmail = req.user.email
+
+  // if(queryEmail !== userEmail){
+  //   return res.status(403).send({message: "forbidden"})
+  // }
   let query = {};
   if (req.query?.email) {
     query.email = queryEmail
@@ -176,7 +183,7 @@ app.post('/api/v1/user/book-borrow', async (req, res) => {
 })
 
 //Post: create book
-app.post('/api/v1/books/create-book', async (req, res) => {
+app.post('/api/v1/books/create-book',verify,  async (req, res) => {
   const body = req.body;
   const result = await booksCollection.insertOne(body)
   res.send(result)
@@ -184,16 +191,17 @@ app.post('/api/v1/books/create-book', async (req, res) => {
 })
 
 //jwt
-app.post('/api/v1/auth/create-token', async(req, res)=>{
-  const user = req.body;
-  const token = jwt.sign(user,process.env.SECRET_KEY, {expiresIn: "1h"})
-  res
-  .cookie("token",token,{
-    httpOnly: true,
-    secure:false,
-  })
-  .send({message: "success"})
-})
+// app.post('/api/v1/auth/create-token', async (req, res) => {
+//   const user = req.body;
+//   const token = jwt.sign(user, process.env.SECRET_KEY, { expiresIn: "1h" })
+//   res
+//     .cookie("token", token, {
+//       httpOnly: true,
+//       secure: false,
+//       sameSite: 'none',
+//     })
+//     .send({ message: "success" })
+// })
 //Put: update method
 app.put('/api/v1/books/book-update/:id', async (req, res) => {
   const id = req.params.id;
