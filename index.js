@@ -7,13 +7,11 @@ const app = express()
 require('dotenv').config()
 const port = process.env.PORT || 5000
 
-// respond with "hello world" when a GET request is made to the homepage
-// baseURL: 'https://library-management-server-gamma.vercel.app/api/v1',
 app.use(cors({
   origin: [
-    // 'http://localhost:5173','http://localhost:5174'
+    // 'http://localhost:5173','http://localhost:5174',
     'https://library-management-proje-5e232.web.app',
-    'https://library-management-proje-5e232.firebaseapp.com'
+    'https://library-management-proje-5e232.firebaseapp.com',
   ],
   credentials: true,
 }))
@@ -24,7 +22,6 @@ app.use(cookieParser())
 app.get('/', (req, res) => {
   res.send('hello world sultan')
 })
-
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.pdscwoz.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -128,11 +125,6 @@ app.post('/api/v1/access-token', async (req, res) => {
     }).send({ success: true })
 })
 
-//all data
-// app.get('/api/v1/books',verify, async (req, res) => {
-//   const result = await booksCollection.find().toArray()
-//   res.send(result)
-// })
 
 //category books
 app.get('/api/v1/books/:bookCategory', async (req, res) => {
@@ -154,11 +146,6 @@ app.get('/api/v1/book/:id', async (req, res) => {
 //Get:borrow
 app.get('/api/v1/user/book-borrow', async (req, res) => {
   const queryEmail = req.query.email
-  // const userEmail = req.user.email
-
-  // if(queryEmail !== userEmail){
-  //   return res.status(403).send({message: "forbidden"})
-  // }
   let query = {};
   if (req.query?.email) {
     query.email = queryEmail
@@ -190,18 +177,6 @@ app.post('/api/v1/books/create-book',verify,  async (req, res) => {
 
 })
 
-//jwt
-// app.post('/api/v1/auth/create-token', async (req, res) => {
-//   const user = req.body;
-//   const token = jwt.sign(user, process.env.SECRET_KEY, { expiresIn: "1h" })
-//   res
-//     .cookie("token", token, {
-//       httpOnly: true,
-//       secure: false,
-//       sameSite: 'none',
-//     })
-//     .send({ message: "success" })
-// })
 //Put: update method
 app.put('/api/v1/books/book-update/:id', async (req, res) => {
   const id = req.params.id;
